@@ -1,13 +1,15 @@
 import logging
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.config import CORS_ORIGINS
+from app.config import CORS_ORIGINS, STATIC_DIR
 from app.database import get_db
 from app.errors import AppError
 from app.limiter import limiter, rate_limit_handler
@@ -49,7 +51,7 @@ async def security_headers(request: Request, call_next):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-    # halaman /docs butuh script dari CDN, jadi CSP ketat hanya untuk respons API
+    # halaman /docs butuh script dari CDN, CSP ketat hanya untuk respons API
     if request.url.path.startswith("/api/"):
         response.headers.setdefault("Cache-Control", "no-store")
         response.headers.setdefault(
@@ -63,7 +65,7 @@ def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
 
 @app.exception_handler(Exception)
 def server_error_handler(request: Request, exc: Exception) -> JSONResponse:
-    # detail error cukup di log server, jangan dikirim ke klien
+    # detail error cukup di log server, tidak dikirim ke klien
     log.exception("error tak terduga di %s %s", request.method, request.url.path)
     return JSONResponse(status_code=500, content={"detail": "Terjadi error di server"})
 
@@ -76,3 +78,18 @@ app.include_router(manager.router)
 def health(db: Session = Depends(get_db)):
     db.execute(text("SELECT 1"))
     return {"status": "ok"}
+
+# di image produksi FastAPI ikut menyajikan build Vue, cookie sesi dan CSRF tetap satu origin
+web = Path(STATIC_DIR) if STATIC_DIR else None
+if web and (web / "index.html").is_file():
+    app.mount("/assets", StaticFiles(directory=web / "assets"), name="assets")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def spa(path: str):
+        if path == "api" or path.startswith("api/"):
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
+        berkas = (web / path).resolve()
+        if path and berkas.is_file() and berkas.is_relative_to(web.resolve()):
+            return FileResponse(berkas)
+        # route Vue (history mode) dijawab index.html, router di browser yang memilih halaman
+        return FileResponse(web / "index.html", headers={"Cache-Control": "no-cache"})

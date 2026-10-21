@@ -137,13 +137,57 @@ dan weekend, semua pola bentrok jadwal, race condition, alur pembayaran otomatis
 pembatalan dan refund, kedaluwarsa, penutupan lapang, perubahan jam buka dan hitungan okupansi
 dashboard.
 
+## Deploy gratis (Render + Neon)
+
+Aplikasi berjalan sebagai satu web service. Image Docker membangun frontend lalu FastAPI menyajikan
+hasil build itu bersama `/api`, jadi cookie sesi dan CSRF tetap satu origin. Database memakai
+PostgreSQL di Neon karena database gratis Render dihapus setelah 30 hari.
+
+| Berkas | Isi |
+|---|---|
+| `Dockerfile` | Build Vue lalu image FastAPI. Setiap container mulai, `alembic upgrade head` dijalankan dulu |
+| `render.yaml` | Blueprint Render dengan paket free, region Singapura, health check `/api/health` dan deploy setelah CI lulus |
+| `.github/workflows/ci.yml` | ruff, migrasi dari nol dan `alembic check`, pytest dengan PostgreSQL 16, build frontend, build image Docker |
+
+Langkah pertama kali:
+
+1. **Neon.** Daftar di <https://neon.com> (bisa memakai akun GitHub) lalu buat project dengan region
+   Singapura. Di menu **Connect**, matikan *Connection pooling* lalu salin connection string yang
+   diawali `postgresql://`.
+2. **Render.** Daftar di <https://render.com> dengan akun GitHub, pilih **New > Blueprint** lalu
+   sambungkan repo ini. Render membaca `render.yaml` dan meminta nilai `DATABASE_URL`. Tempel
+   connection string Neon di sana. `SECRET_KEY` dibuat otomatis oleh Render.
+3. Tunggu deploy pertama selesai. Container menjalankan migrasi sendiri, lalu aplikasi bisa dibuka di
+   `https://<nama-service>.onrender.com`.
+4. Isi data contoh sekali dari komputer sendiri. Perintah ini menghapus data lama di database Neon.
+
+```bash
+cd backend
+read -rs NEON_URL             # tempel connection string Neon lalu Enter, tidak tampil di layar
+DATABASE_URL="$NEON_URL" .venv/bin/python -m app.seed
+```
+
+Setelah itu setiap push ke `main` menjalankan CI di GitHub Actions. Render hanya men-deploy commit
+yang semua pemeriksaannya lulus.
+
+Catatan paket gratis:
+
+- Web service tertidur setelah 15 menit tanpa pengunjung dan butuh sekitar satu menit untuk bangun.
+  Buka aplikasinya beberapa menit sebelum demo.
+- Compute Neon tidur setelah 5 menit tidak dipakai lalu bangun sendiri saat ada query.
+- Jangan menambahkan kartu kredit. Tanpa metode pembayaran, kuota yang habis membuat layanan berhenti
+  sampai bulan berikutnya dan tidak ditagih.
+
 ## Struktur folder
 
 ```
 uas-2/
+├── Dockerfile               # image produksi (build Vue + FastAPI)
+├── render.yaml              # Blueprint Render
+├── .github/workflows/ci.yml # CI lint, migrasi, test dan build
 ├── backend/
 │   ├── app/
-│   │   ├── main.py          # aplikasi FastAPI, CORS, header keamanan
+│   │   ├── main.py          # aplikasi FastAPI, CORS, header keamanan, build Vue di produksi
 │   │   ├── config.py        # baca .env, SECRET_KEY wajib
 │   │   ├── database.py      # engine dan session
 │   │   ├── models.py        # tabel users, venues, courts, bookings, booking_slots, payments, dst.

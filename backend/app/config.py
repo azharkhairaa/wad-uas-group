@@ -9,6 +9,10 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql+psycopg://postgres:postgres@localhost:5432/lapangin",
 )
+# Neon/Render memberi URL postgresql://, SQLAlchemy perlu tahu driver psycopg 3
+for awalan in ("postgresql://", "postgres://"):
+    if DATABASE_URL.startswith(awalan):
+        DATABASE_URL = "postgresql+psycopg://" + DATABASE_URL[len(awalan):]
 
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 if len(SECRET_KEY) < 32:
@@ -29,6 +33,9 @@ CORS_ORIGINS = [
 
 # true kalau aplikasi sudah dilayani lewat https
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+
+# folder hasil build frontend, diisi di image Docker supaya web dan API satu origin
+STATIC_DIR = os.getenv("STATIC_DIR", "")
 
 ZONA_WAKTU = ZoneInfo("Asia/Jakarta")
 
