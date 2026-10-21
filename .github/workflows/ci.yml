@@ -92,3 +92,40 @@ jobs:
 
       - name: Build image yang dipakai Render
         run: docker build -t lapangin:ci .
+
+  migrate:
+    name: Migrasi database Neon
+    runs-on: ubuntu-latest
+    needs: [backend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      # secret repo berisi connection string Neon (direct), job dilewati kalau belum diisi
+      DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+        if: env.DATABASE_URL != ''
+
+      - uses: actions/setup-python@v7
+        if: env.DATABASE_URL != ''
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        if: env.DATABASE_URL != ''
+        run: pip install -r requirements.txt
+
+      - name: alembic upgrade head
+        if: env.DATABASE_URL != ''
+        run: |
+          export SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+          alembic upgrade head
+
+      - name: Secret NEON_DATABASE_URL belum ada
+        if: env.DATABASE_URL == ''
+        working-directory: .
+        run: echo "Secret NEON_DATABASE_URL belum diisi, migrasi dilewati"

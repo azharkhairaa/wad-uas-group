@@ -137,53 +137,63 @@ dan weekend, semua pola bentrok jadwal, race condition, alur pembayaran otomatis
 pembatalan dan refund, kedaluwarsa, penutupan lapang, perubahan jam buka dan hitungan okupansi
 dashboard.
 
-## Deploy gratis (Render + Neon)
+## Deploy gratis (Vercel + Neon)
 
-Aplikasi berjalan sebagai satu web service. Image Docker membangun frontend lalu FastAPI menyajikan
-hasil build itu bersama `/api`, jadi cookie sesi dan CSRF tetap satu origin. Database memakai
-PostgreSQL di Neon karena database gratis Render dihapus setelah 30 hari.
+Frontend dan API berjalan di satu project Vercel dengan dua service di domain yang sama, jadi cookie
+sesi dan CSRF tetap satu origin. Service `web` menyajikan hasil build Vue, service `api` menjalankan
+FastAPI sebagai Vercel Function untuk `/api`, `/docs` dan `/openapi.json`. Database memakai
+PostgreSQL di Neon. Paket Hobby Vercel dan paket Free Neon tidak meminta kartu kredit.
 
 | Berkas | Isi |
 |---|---|
-| `Dockerfile` | Build Vue lalu image FastAPI. Setiap container mulai, `alembic upgrade head` dijalankan dulu |
-| `render.yaml` | Blueprint Render dengan paket free, region Singapura, health check `/api/health` dan deploy setelah CI lulus |
-| `.github/workflows/ci.yml` | ruff, migrasi dari nol dan `alembic check`, pytest dengan PostgreSQL 16, build frontend, build image Docker |
+| `vercel.json` | Service `web` (folder `frontend/`, rute Vue diarahkan ke `index.html`) dan `api` (folder `backend/`, `app.main:app`) |
+| `.github/workflows/ci.yml` | ruff, migrasi dari nol dan `alembic check`, pytest dengan PostgreSQL 16, build frontend, build image Docker, lalu migrasi ke Neon setelah push ke `main` |
+| `Dockerfile` | Image produksi (build Vue + FastAPI) untuk menjalankan aplikasi di host lain yang mendukung container |
 
 Langkah pertama kali:
 
 1. **Neon.** Daftar di <https://neon.com> (bisa memakai akun GitHub) lalu buat project dengan region
    Singapura. Di menu **Connect**, matikan *Connection pooling* lalu salin connection string yang
    diawali `postgresql://`.
-2. **Render.** Daftar di <https://render.com> dengan akun GitHub, pilih **New > Blueprint** lalu
-   sambungkan repo ini. Render membaca `render.yaml` dan meminta nilai `DATABASE_URL`. Tempel
-   connection string Neon di sana. `SECRET_KEY` dibuat otomatis oleh Render.
-3. Tunggu deploy pertama selesai. Container menjalankan migrasi sendiri, lalu aplikasi bisa dibuka di
-   `https://<nama-service>.onrender.com`.
-4. Isi data contoh sekali dari komputer sendiri. Perintah ini menghapus data lama di database Neon.
+2. **Isi database** sekali dari komputer sendiri. Perintah ini membuat tabel lalu mengisi data contoh
+   dan menghapus data lama di database Neon.
 
 ```bash
 cd backend
 read -rs NEON_URL             # tempel connection string Neon lalu Enter, tidak tampil di layar
+DATABASE_URL="$NEON_URL" .venv/bin/alembic upgrade head
 DATABASE_URL="$NEON_URL" .venv/bin/python -m app.seed
 ```
 
-Setelah itu setiap push ke `main` menjalankan CI di GitHub Actions. Render hanya men-deploy commit
-yang semua pemeriksaannya lulus.
+3. **Vercel.** Daftar di <https://vercel.com> dengan akun GitHub (paket Hobby), pilih
+   **Add New > Project** lalu import repo ini. Vercel membaca `vercel.json` dan membangun kedua
+   service. Isi Environment Variables berikut sebelum deploy.
+
+| Variabel | Nilai |
+|---|---|
+| `DATABASE_URL` | connection string Neon |
+| `SECRET_KEY` | hasil `python3 -c "import secrets; print(secrets.token_hex(32))"` |
+| `COOKIE_SECURE` | `true` |
+| `TOKEN_MENIT` | `120` |
+
+4. Opsional, tambahkan secret repo `NEON_DATABASE_URL` (Settings > Secrets and variables > Actions)
+   berisi connection string yang sama. Setelah itu setiap push ke `main` menjalankan migrasi ke Neon
+   lewat GitHub Actions. Tanpa secret ini job migrasi dilewati.
+
+Setiap push ke `main` menjalankan CI di GitHub Actions dan Vercel men-deploy commit tersebut.
 
 Catatan paket gratis:
 
-- Web service tertidur setelah 15 menit tanpa pengunjung dan butuh sekitar satu menit untuk bangun.
-  Buka aplikasinya beberapa menit sebelum demo.
+- Function Python di Vercel butuh beberapa detik saat pertama dipanggil setelah lama tidak dipakai.
 - Compute Neon tidur setelah 5 menit tidak dipakai lalu bangun sendiri saat ada query.
-- Jangan menambahkan kartu kredit. Tanpa metode pembayaran, kuota yang habis membuat layanan berhenti
-  sampai bulan berikutnya dan tidak ditagih.
+- Rate limit login membaca IP asli dari header `x-real-ip` yang ditulis ulang Vercel.
 
 ## Struktur folder
 
 ```
 uas-2/
+├── vercel.json              # service web (Vue) dan api (FastAPI) di Vercel
 ├── Dockerfile               # image produksi (build Vue + FastAPI)
-├── render.yaml              # Blueprint Render
 ├── .github/workflows/ci.yml # CI lint, migrasi, test dan build
 ├── backend/
 │   ├── app/
