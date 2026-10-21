@@ -1,0 +1,6 @@
+# file soal dari dosen tidak ikut repo
+/*.pdf
+
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
