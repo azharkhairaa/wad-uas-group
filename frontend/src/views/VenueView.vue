@@ -7,6 +7,7 @@ import AppIcon from '@/components/AppIcon'
 import DateStrip from '@/components/DateStrip.vue'
 import RequestState from '@/components/RequestState.vue'
 import SlotGrid from '@/components/SlotGrid.vue'
+import VenueGallery from '@/components/VenueGallery.vue'
 import { useRequest } from '@/composables/useRequest'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
@@ -208,6 +209,9 @@ onBeforeUnmount(() => clearInterval(timer))
 
         <div class="tata">
           <section class="utama" aria-label="Ketersediaan slot">
+            <!-- Galeri Foto Lapang & Fasilitas -->
+            <VenueGallery :slug="venue.data.value.slug" :venue-nama="venue.data.value.nama" />
+
             <details class="card jadwal">
               <summary>
                 <strong>Jam operasional & tarif</strong>
