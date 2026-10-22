@@ -133,7 +133,6 @@ async function setujui(kode) {
             :nilai="persen(d.ringkasan.okupansi_persen)"
             :ket="`${d.ringkasan.jam_terisi.toLocaleString('id-ID')} dari ${d.ringkasan.jam_tersedia.toLocaleString('id-ID')} jam lapang terisi`"
           />
-          <KpiTile label="Pendapatan bersih" :nilai="rupiah(d.ringkasan.pendapatan)" ket="DP + pelunasan − refund" />
           <KpiTile label="Booking terkonfirmasi" :nilai="String(d.ringkasan.booking_terkonfirmasi)" ket="termasuk yang sudah selesai" />
           <KpiTile label="Booking hari ini" :nilai="String(d.ringkasan.booking_hari_ini)" :ket="tanggalPendek(hariIni)" />
           <KpiTile label="Menunggu persetujuan" :nilai="String(d.ringkasan.menunggu_tindakan)" ket="perlu tindakan kamu">
@@ -141,6 +140,12 @@ async function setujui(kode) {
               Tinjau
             </RouterLink>
           </KpiTile>
+          <KpiTile
+            class="kpi-pendapatan"
+            label="Pendapatan bersih"
+            :nilai="rupiah(d.ringkasan.pendapatan)"
+            ket="DP + pelunasan − refund"
+          />
         </div>
 
         <section class="card card-body">
@@ -240,8 +245,17 @@ async function setujui(kode) {
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr));
+  grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.kpi-pendapatan {
+  grid-column: 1 / -1;
+}
+
+.kpi-pendapatan :deep(.nilai) {
+  font-size: 1.85rem;
+  white-space: nowrap;
 }
 
 .judul {
@@ -318,7 +332,7 @@ async function setujui(kode) {
 
 @media (max-width: 1100px) {
   .kpi-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .kpi-grid > :first-child {
@@ -329,6 +343,14 @@ async function setujui(kode) {
 @media (max-width: 760px) {
   .dua {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi-grid > :nth-child(4) {
+    grid-column: 1 / -1;
   }
 }
 
