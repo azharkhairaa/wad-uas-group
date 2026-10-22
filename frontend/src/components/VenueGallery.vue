@@ -81,27 +81,63 @@ const GALERI_DATA = {
   ],
   'gor-antapani': [
     {
-      src: '/images/venues/gor-antapani/badminton-vinyl.jpg',
-      judul: 'Lapang Badminton Karpet Hijau',
+      src: '/images/venues/gor-antapani-sport-center/badminton-vinyl.jpg',
+      judul: 'Lapang Badminton Karpet Vinyl',
       kategori: 'Lapang Badminton',
       deskripsi: 'Gedung olahraga indoor dengan empat lapang badminton sejajar dan ventilasi udara alami yang segar.',
     },
     {
-      src: '/images/venues/gor-antapani/futsal-interlock.jpg',
-      judul: 'Lapang Futsal Interlock',
+      src: '/images/venues/gor-antapani-sport-center/futsal-interlock.jpg',
+      judul: 'Lapang Futsal Antapani',
       kategori: 'Lapang Futsal',
-      deskripsi: 'Lantai interlock awet anti-slip dengan gawang standar dan pencahayaan malam yang terang.',
+      deskripsi: 'Lantai vinyl interlock awet anti-slip dengan gawang standar dan pencahayaan malam yang terang.',
     },
     {
-      src: '/images/venues/gor-antapani/kantin-parkir.jpg',
-      judul: 'Kantin Komunitas & Parkir Luas',
-      kategori: 'Fasilitas Publik',
-      deskripsi: 'Area parkir motor dan mobil luas dengan kantin favorit komunitas olahraga lokal.',
+      src: '/images/venues/gor-antapani-sport-center/basket-voli.jpg',
+      judul: 'Lapang Voli & Basket Indoor',
+      kategori: 'Lapang Voli & Basket',
+      deskripsi: 'Fasilitas lapang serbaguna untuk latihan voli dan basket bagi sekolah serta komunitas lokal.',
+    },
+    {
+      src: '/images/venues/gor-antapani-sport-center/kantin-parkir.jpg',
+      judul: 'Area Parkir, Musala & Warung',
+      kategori: 'Fasilitas GOR',
+      deskripsi: 'Area parkir motor dan mobil luas dengan warung ramah kantong dan musala bersih.',
+    },
+  ],
+  'gor-antapani-sport-center': [
+    {
+      src: '/images/venues/gor-antapani-sport-center/badminton-vinyl.jpg',
+      judul: 'Lapang Badminton Karpet Vinyl',
+      kategori: 'Lapang Badminton',
+      deskripsi: 'Gedung olahraga indoor dengan empat lapang badminton sejajar dan ventilasi udara alami yang segar.',
+    },
+    {
+      src: '/images/venues/gor-antapani-sport-center/futsal-interlock.jpg',
+      judul: 'Lapang Futsal Antapani',
+      kategori: 'Lapang Futsal',
+      deskripsi: 'Lantai vinyl interlock awet anti-slip dengan gawang standar dan pencahayaan malam yang terang.',
+    },
+    {
+      src: '/images/venues/gor-antapani-sport-center/basket-voli.jpg',
+      judul: 'Lapang Voli & Basket Indoor',
+      kategori: 'Lapang Voli & Basket',
+      deskripsi: 'Fasilitas lapang serbaguna untuk latihan voli dan basket bagi sekolah serta komunitas lokal.',
+    },
+    {
+      src: '/images/venues/gor-antapani-sport-center/kantin-parkir.jpg',
+      judul: 'Area Parkir, Musala & Warung',
+      kategori: 'Fasilitas GOR',
+      deskripsi: 'Area parkir motor dan mobil luas dengan warung ramah kantong dan musala bersih.',
     },
   ],
 }
 
-const itemGaleri = computed(() => GALERI_DATA[props.slug] || GALERI_DATA['setiabudi-padel-tennis'])
+const itemGaleri = computed(() => {
+  if (GALERI_DATA[props.slug]) return GALERI_DATA[props.slug]
+  const key = Object.keys(GALERI_DATA).find((k) => props.slug.startsWith(k) || k.startsWith(props.slug))
+  return key ? GALERI_DATA[key] : GALERI_DATA['dago-sport-hub']
+})
 const indeksAktif = ref(0)
 const fotoAktif = computed(() => itemGaleri.value[indeksAktif.value] || itemGaleri.value[0])
 
