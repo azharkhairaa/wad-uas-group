@@ -27,6 +27,7 @@ const olahraga = ref(route.query.olahraga || '')
 const pilihan = ref(null)
 const catatan = ref('')
 const mengirim = ref(false)
+const memuatJadwal = ref(false)
 
 const venue = useRequest(venueApi.detail)
 const kalender = useRequest(venueApi.kalender)
@@ -46,9 +47,23 @@ const ringkasan = computed(() => {
   return { tarif, total, deposit, persen }
 })
 
-function muatSlot() {
+async function muatSlot(silent = false) {
+  if (!silent) memuatJadwal.value = true
   const params = { tanggal: tanggal.value, olahraga: olahraga.value }
-  return slot.jalankan(slug.value, params)
+  try {
+    const pRequest = slot.jalankan(slug.value, params)
+    if (!silent && slot.data.value) {
+      // beri jeda visual minimal ~180ms agar loader terlihat jelas bagi pengguna saat ganti tanggal
+      const [hasil] = await Promise.all([
+        pRequest,
+        new Promise((resolve) => setTimeout(resolve, 180)),
+      ])
+      return hasil
+    }
+    return await pRequest
+  } finally {
+    if (!silent) memuatJadwal.value = false
+  }
 }
 
 function muatKalender() {
@@ -140,7 +155,7 @@ onMounted(async () => {
   await Promise.all([muatKalender(), muatSlot()])
   pulihkanPilihan()
   timer = setInterval(() => {
-    if (document.visibilityState === 'visible' && !mengirim.value) muatSlot()
+    if (document.visibilityState === 'visible' && !mengirim.value) muatSlot(true)
   }, 60_000)
 })
 onBeforeUnmount(() => clearInterval(timer))
@@ -247,7 +262,14 @@ onBeforeUnmount(() => clearInterval(timer))
 
             <div class="blok">
               <div class="blok-kepala">
-                <h2 class="blok-judul">Slot {{ tanggalPanjang(tanggal) }}</h2>
+                <div class="blok-judul-grup">
+                  <h2 class="blok-judul">Slot {{ tanggalPanjang(tanggal) }}</h2>
+                  <transition name="fade">
+                    <span v-if="memuatJadwal" class="memuat-slot-tag" aria-live="polite">
+                      <span class="spinner" aria-hidden="true" /> Memuat slot...
+                    </span>
+                  </transition>
+                </div>
                 <ul class="legenda small" aria-label="Keterangan warna slot">
                   <li v-for="(label, kode) in STATUS_SLOT" :key="kode"><span :class="['kotak', kode]" />{{ label }}</li>
                 </ul>
@@ -259,42 +281,55 @@ onBeforeUnmount(() => clearInterval(timer))
                 :tinggi="260"
                 @ulang="muatSlot"
               >
-                <div v-if="slot.data.value?.is_tutup" class="alert warning">
-                  Venue tutup pada {{ slot.data.value.hari }}. Pilih tanggal lain.
-                </div>
-                <div v-else class="courts">
-                  <article
-                    v-for="c in courtsSlot"
-                    :key="c.court.id"
-                    class="court card"
-                    :class="{ aktif: pilihan?.courtId === c.court.id }"
-                  >
-                    <div class="court-kepala">
-                      <div>
-                        <h3>
-                          <AppIcon :name="c.court.olahraga" :size="20" />
-                          {{ c.court.nama }}
-                        </h3>
-                        <p class="muted small">
-                          {{ infoOlahraga(c.court.olahraga).panjang }} · {{ c.court.permukaan }} ·
-                          {{ c.court.is_indoor ? 'Indoor' : 'Outdoor' }}
-                          <template v-if="c.court.kapasitas"> · {{ c.court.kapasitas }} pemain</template>
-                        </p>
-                      </div>
-                      <div class="tarif">
-                        <strong>{{ rupiah(c.tarif_per_jam) }}</strong><span class="muted small">/jam</span>
-                        <span class="badge" :class="slot.data.value.is_weekend ? 'warning' : 'info'">
-                          {{ slot.data.value.is_weekend ? 'Tarif weekend' : 'Tarif weekday' }}
-                        </span>
+                <div class="slot-kontainer">
+                  <transition name="fade">
+                    <div v-if="memuatJadwal && slot.data.value" class="slot-overlay" aria-live="polite">
+                      <div class="overlay-kotak">
+                        <span class="spinner" aria-hidden="true" />
+                        <span>Memperbarui jadwal slot...</span>
                       </div>
                     </div>
-                    <SlotGrid
-                      :slots="c.slots"
-                      :pilihan="pilihan?.courtId === c.court.id ? pilihan : null"
-                      @klik="(j) => klik(c.court.id, j)"
-                    />
-                    <p v-if="c.slot_tersedia === 0" class="muted small">Tidak ada slot kosong di tanggal ini.</p>
-                  </article>
+                  </transition>
+
+                  <div :class="{ 'sedang-memuat': memuatJadwal }">
+                    <div v-if="slot.data.value?.is_tutup" class="alert warning">
+                      Venue tutup pada {{ slot.data.value.hari }}. Pilih tanggal lain.
+                    </div>
+                    <div v-else class="courts">
+                      <article
+                        v-for="c in courtsSlot"
+                        :key="c.court.id"
+                        class="court card"
+                        :class="{ aktif: pilihan?.courtId === c.court.id }"
+                      >
+                        <div class="court-kepala">
+                          <div>
+                            <h3>
+                              <AppIcon :name="c.court.olahraga" :size="20" />
+                              {{ c.court.nama }}
+                            </h3>
+                            <p class="muted small">
+                              {{ infoOlahraga(c.court.olahraga).panjang }} · {{ c.court.permukaan }} ·
+                              {{ c.court.is_indoor ? 'Indoor' : 'Outdoor' }}
+                              <template v-if="c.court.kapasitas"> · {{ c.court.kapasitas }} pemain</template>
+                            </p>
+                          </div>
+                          <div class="tarif">
+                            <strong>{{ rupiah(c.tarif_per_jam) }}</strong><span class="muted small">/jam</span>
+                            <span class="badge" :class="slot.data.value.is_weekend ? 'warning' : 'info'">
+                              {{ slot.data.value.is_weekend ? 'Tarif weekend' : 'Tarif weekday' }}
+                            </span>
+                          </div>
+                        </div>
+                        <SlotGrid
+                          :slots="c.slots"
+                          :pilihan="pilihan?.courtId === c.court.id ? pilihan : null"
+                          @klik="(j) => klik(c.court.id, j)"
+                        />
+                        <p v-if="c.slot_tersedia === 0" class="muted small">Tidak ada slot kosong di tanggal ini.</p>
+                      </article>
+                    </div>
+                  </div>
                 </div>
               </RequestState>
             </div>
@@ -479,10 +514,86 @@ onBeforeUnmount(() => clearInterval(timer))
 .blok-kepala {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px 16px;
   margin-bottom: 12px;
+}
+
+.blok-judul-grup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.memuat-slot-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--brand-ink);
+  background: var(--brand-soft);
+  padding: 3px 10px;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+
+.memuat-slot-tag .spinner {
+  width: 12px;
+  height: 12px;
+  border-width: 1.5px;
+}
+
+.slot-kontainer {
+  position: relative;
+  min-height: 200px;
+}
+
+.slot-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 50px;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  backdrop-filter: blur(1.5px);
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+
+.overlay-kotak {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sedang-memuat {
+  opacity: 0.35;
+  filter: grayscale(35%);
+  pointer-events: none;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 .blok-judul {
