@@ -7,12 +7,26 @@ booking dengan deposit. Venue manager mengelola lapang, tarif, jam buka dan book
 Cabang olahraga yang didukung ada tujuh, yaitu lapang tennis, lapang padel, lapang futsal, golf
 driving, lapang badminton, lapang voli dan lapang basket.
 
+- **Aplikasi (Live):** <https://lapangin-five.vercel.app>
+- **Dokumentasi API (Swagger UI):** <https://lapangin-five.vercel.app/docs>
+- **Repositori:** <https://github.com/azharkhairaa/wad-uas-group>
+
+### Kelompok 4 · Web Application Development
+
+| No | Nama Anggota | NIM | Peran Utama | Akun GitHub |
+|:---:|---|:---:|---|:---:|
+| 1 | Muhammad Ariffanka | 24120310007 | Frontend (Halaman Publik & Customer) | [@Ariffanka](https://github.com/Ariffanka) |
+| 2 | Dimas Kurniawan | 25120300016 | Frontend (Panel Manager & Dashboard) | [@dimask016](https://github.com/dimask016) |
+| 3 | Muhammad Azhar Khaira | 25120300010 | Backend (Database, Booking & Deployment) | [@azharkhairaa](https://github.com/azharkhairaa) |
+| 4 | Muh. Awaluddin | 25120300003 | Backend (Auth, RBAC & Pengujian) | [@muhwal21](https://github.com/muhwal21) |
+
 | Lapisan | Teknologi |
 |---|---|
 | Frontend | Vue 3 (Composition API), Vite, Pinia, Vue Router |
 | Backend | FastAPI, Pydantic, PyJWT, bcrypt, slowapi |
 | Database | PostgreSQL, SQLAlchemy 2.x, Alembic |
 | Pengujian | pytest (60 test), ruff |
+| CI/CD & Cloud | GitHub Actions, Docker, Vercel, Neon PostgreSQL |
 
 ## Tampilan
 
@@ -48,30 +62,66 @@ Pembayaran di aplikasi ini hanya simulasi.
 | 9 PostgreSQL, SQLAlchemy, Alembic | Model gaya `Mapped`, migrasi `0001`, transaksi commit/rollback, eager loading `selectinload` untuk mencegah N+1, query lewat ORM tanpa SQL mentah dari input |
 | 10 JWT dan OWASP | bcrypt dengan `HASH_DUMMY`, JWT wajib `exp` dan `sub`, cookie httpOnly + SameSite + CSRF double submit, Bearer untuk Swagger, BOLA dijawab 404, RBAC customer dan manager, `SECRET_KEY` gagal cepat kalau kurang dari 32 karakter |
 
-CI/CD GitHub Actions dan deployment (Docker) menyusul setelah materinya dibahas di sesi berikutnya.
+| 11–12 Testing & CI/CD | 60 test otomatis pytest, linting ruff, GitHub Actions CI untuk lint, migrasi skema Alembic, pengujian dengan PostgreSQL terisolasi, dan verifikasi build frontend |
+| 13–14 Deployment & Container | Dockerfile multi-stage, arsitektur single-domain di Vercel (Vue SPA + serverless FastAPI) dengan database cloud PostgreSQL di Neon |
 
 ## Menjalankan di komputer sendiri
 
-Prasyarat: PostgreSQL 14 ke atas, Python 3.12, Node.js 22.
+### Prasyarat
 
-### Backend
+- **Python:** 3.11 atau 3.12
+- **Node.js:** 18, 20, atau 22 (LTS)
+- **PostgreSQL:** 14 ke atas (sudah berjalan di sistem)
+
+---
+
+### 1. Menyiapkan dan Menjalankan Backend
+
+#### A. Linux / macOS (Bash / Zsh)
 
 ```bash
 cd backend
-python3.12 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
-cp .env.example .env          # isi DATABASE_URL dan SECRET_KEY
+cp .env.example .env          # sesuaikan DATABASE_URL dan SECRET_KEY bila perlu
 createdb lapangin
 alembic upgrade head
-python -m app.seed            # data contoh, menghapus data lama
+python -m app.seed            # memuat data contoh lapang & booking
+uvicorn app.main:app --reload --port 8000
+```
+
+#### B. Windows (PowerShell / Command Prompt)
+
+```powershell
+cd backend
+python -m venv .venv
+
+# PowerShell:
+.venv\Scripts\Activate.ps1
+# Atau jika menggunakan Command Prompt (CMD):
+# .venv\Scripts\activate.bat
+
+pip install -r requirements-dev.txt
+copy .env.example .env
+
+# Buat database lapangin (pastikan service PostgreSQL sudah berjalan):
+createdb -U postgres lapangin
+# Atau via psql: psql -U postgres -c "CREATE DATABASE lapangin;"
+
+alembic upgrade head
+python -m app.seed
 uvicorn app.main:app --reload --port 8000
 ```
 
 Dokumentasi API interaktif ada di <http://localhost:8000/docs>. Untuk mencoba endpoint yang butuh
-login di Swagger, tekan **Authorize** lalu isi email di kolom username.
+login di Swagger, tekan **Authorize** lalu isi email di kolom username dan password akun demo.
 
-### Frontend
+---
+
+### 2. Menyiapkan dan Menjalankan Frontend (Semua OS)
+
+Buka terminal baru:
 
 ```bash
 cd frontend
@@ -124,10 +174,21 @@ supaya dua klik bersamaan tidak memproses pembayaran dua kali.
 
 ## Pengujian
 
+#### Linux / macOS:
+
 ```bash
 cd backend
 createdb lapangin_test        # sekali saja
 pytest -q                     # 60 test
+ruff check .
+```
+
+#### Windows (PowerShell):
+
+```powershell
+cd backend
+createdb -U postgres lapangin_test   # sekali saja
+pytest -q                            # 60 test
 ruff check .
 ```
 
@@ -158,11 +219,20 @@ Langkah pertama kali:
 2. **Isi database** sekali dari komputer sendiri. Perintah ini membuat tabel lalu mengisi data contoh
    dan menghapus data lama di database Neon.
 
+##### Linux / macOS:
 ```bash
 cd backend
-read -rs NEON_URL             # tempel connection string Neon lalu Enter, tidak tampil di layar
-DATABASE_URL="$NEON_URL" .venv/bin/alembic upgrade head
-DATABASE_URL="$NEON_URL" .venv/bin/python -m app.seed
+read -rs NEON_URL             # tempel connection string Neon lalu Enter
+DATABASE_URL="$NEON_URL" alembic upgrade head
+DATABASE_URL="$NEON_URL" python -m app.seed
+```
+
+##### Windows (PowerShell):
+```powershell
+cd backend
+$env:DATABASE_URL = "postgresql://..."   # tempel connection string Neon
+alembic upgrade head
+python -m app.seed
 ```
 
 3. **Vercel.** Daftar di <https://vercel.com> dengan akun GitHub (paket Hobby), pilih
