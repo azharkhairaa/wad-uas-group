@@ -145,6 +145,20 @@ def test_tandai_selesai_setelah_jam_main(login, customer, manager, venue_court, 
 
     saat_main = datetime.combine(tanggal, time(19, 30), tzinfo=ZONA_WAKTU)
     monkeypatch.setattr(waktu, "sekarang", lambda: saat_main)
+    # Jam main sudah lewat tapi belum lunas -> harus ditolak (400)
+    res_sebelum_lunas = pengelola.post(f"/api/v1/manager/bookings/{kode}/complete")
+    assert res_sebelum_lunas.status_code == 400
+    assert "belum lunas" in res_sebelum_lunas.json()["detail"].lower()
+
+    # Manager mencatat pelunasan langsung di venue
+    res_bayar = pengelola.post(
+        f"/api/v1/manager/bookings/{kode}/payments",
+        json={"jenis": "pelunasan", "metode": "qris"},
+    )
+    assert res_bayar.status_code == 200
+    assert res_bayar.json()["sisa_tagihan"] == 0
+
+    # Setelah lunas, booking baru dapat ditandai selesai
     res = pengelola.post(f"/api/v1/manager/bookings/{kode}/complete")
     assert res.json()["status"] == "selesai"
     assert client.get(f"/api/v1/bookings/{kode}").json()["bisa_dibatalkan"] is False

@@ -235,5 +235,11 @@ def selesaikan(db: Session, booking: Booking) -> Booking:
         raise AppError("Hanya booking terkonfirmasi yang bisa ditandai selesai")
     if booking.mulai_pada > waktu.sekarang():
         raise AppError("Booking baru bisa ditandai selesai setelah jam main dimulai")
+    if booking.sisa_tagihan > 0:
+        raise AppError(
+            f"Booking belum lunas (sisa tagihan Rp{booking.sisa_tagihan:,}). "
+            "Pelunasan harus dicatat terlebih dahulu sebelum booking dapat ditandai selesai."
+        )
     booking.status = S.SELESAI
     return _selesai_simpan(db, booking)
+

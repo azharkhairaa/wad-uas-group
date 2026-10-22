@@ -42,6 +42,7 @@ export const managerApi = {
   setujui: (kode) => http.post(`${m}/bookings/${encodeURIComponent(kode)}/approve`),
   tolak: (kode, alasan) => http.post(`${m}/bookings/${encodeURIComponent(kode)}/reject`, { alasan }),
   selesai: (kode) => http.post(`${m}/bookings/${encodeURIComponent(kode)}/complete`),
+  bayar: (kode, data) => http.post(`${m}/bookings/${encodeURIComponent(kode)}/payments`, data),
   batalkan: (kode, alasan) =>
     http.post(`${m}/bookings/${encodeURIComponent(kode)}/cancel`, { alasan }),
   agenda: (id, params) => http.get(`${m}/venues/${id}/agenda`, params),

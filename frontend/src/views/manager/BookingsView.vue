@@ -67,6 +67,8 @@ const detail = ref(null)
 const memproses = ref(false)
 const modalAlasan = ref(null) // 'tolak' | 'batal'
 const alasan = ref('')
+const modalBayar = ref(false)
+const metodeBayar = ref('qris')
 
 async function buka(kode) {
   try {
@@ -76,19 +78,45 @@ async function buka(kode) {
   }
 }
 
+function isLewatBelumLunas(b) {
+  if (b.status !== 'terkonfirmasi' || (b.sisa_tagihan || 0) <= 0) return false
+  const mulai = new Date(`${b.tanggal}T${String(b.jam_mulai).padStart(2, '0')}:00:00`)
+  return mulai <= new Date()
+}
+
 const bisa = computed(() => {
   const b = detail.value
   if (!b) return {}
   const mulai = new Date(`${b.tanggal}T${String(b.jam_mulai).padStart(2, '0')}:00:00`)
   const lewat = mulai <= new Date()
   const menunggu = ['menunggu_pembayaran', 'menunggu_persetujuan'].includes(b.status)
+  const lunas = (b.sisa_tagihan || 0) <= 0
   return {
     setujui: menunggu && !lewat,
     tolak: menunggu,
-    selesai: b.status === 'terkonfirmasi' && lewat,
+    selesai: b.status === 'terkonfirmasi' && lewat && lunas,
+    lewatBelumLunas: b.status === 'terkonfirmasi' && lewat && !lunas,
     batal: b.status === 'terkonfirmasi' && !lewat,
+    catatPelunasan: (b.status === 'terkonfirmasi' || menunggu) && !lunas,
   }
 })
+
+async function konfirmasiPelunasan() {
+  memproses.value = true
+  try {
+    detail.value = await managerApi.bayar(detail.value.kode, {
+      jenis: 'pelunasan',
+      metode: metodeBayar.value,
+    })
+    toast.sukses(`Pelunasan booking ${detail.value.kode} berhasil dicatat.`)
+    modalBayar.value = false
+    muat()
+  } catch (e) {
+    toast.gagal(e.message)
+  } finally {
+    memproses.value = false
+  }
+}
 
 async function jalankanAksi(jenis) {
   memproses.value = true
@@ -185,6 +213,11 @@ if (route.query.q) buka(route.query.q)
                 <td class="num nowrap">
                   {{ rupiah(b.jumlah_dibayar) }}
                   <div class="muted small">dari {{ rupiah(b.total_harga) }}</div>
+                  <div v-if="isLewatBelumLunas(b)">
+                    <span class="badge danger plain mini" style="display: inline-block; margin-top: 4px;" title="Jadwal main sudah lewat namun belum lunas">
+                      Belum lunas (Sisa {{ rupiah(b.sisa_tagihan) }})
+                    </span>
+                  </div>
                 </td>
                 <td><StatusBadge :status="b.status" /></td>
               </tr>
@@ -214,6 +247,16 @@ if (route.query.q) buka(route.query.q)
           <div><dt>Jadwal</dt><dd>{{ tanggalPanjang(detail.tanggal) }}, {{ rentangJam(detail.jam_mulai, detail.jam_selesai) }}</dd></div>
           <div><dt>Total</dt><dd class="num">{{ rupiah(detail.total_harga) }}</dd></div>
           <div><dt>Sudah dibayar</dt><dd class="num">{{ rupiah(detail.jumlah_dibayar) }}</dd></div>
+          <div v-if="detail.sisa_tagihan > 0">
+            <dt>Sisa tagihan</dt>
+            <dd class="num" style="color: var(--danger, #dc2626); font-weight: 700;">
+              {{ rupiah(detail.sisa_tagihan) }} (Belum lunas)
+            </dd>
+          </div>
+          <div v-else-if="detail.jumlah_dibayar > 0">
+            <dt>Status bayar</dt>
+            <dd><span class="badge success plain mini">Lunas</span></dd>
+          </div>
           <div v-if="detail.catatan"><dt>Catatan</dt><dd>{{ detail.catatan }}</dd></div>
           <div v-if="detail.alasan_batal"><dt>Alasan</dt><dd>{{ detail.alasan_batal }}</dd></div>
         </dl>
@@ -233,11 +276,30 @@ if (route.query.q) buka(route.query.q)
         <p v-if="detail.status === 'menunggu_pembayaran'" class="alert warning small">
           Customer belum membayar DP. Setujui hanya kalau pembayaran diterima langsung di lokasi.
         </p>
+        <div v-if="bisa.lewatBelumLunas" class="alert danger small">
+          <strong>⚠️ Jadwal Main Sudah Lewat Namun Belum Lunas</strong>
+          <p style="margin: 4px 0 0;">
+            Customer memiliki tunggakan sisa tagihan sebesar <strong>{{ rupiah(detail.sisa_tagihan) }}</strong>. Sesuai ketentuan, booking <strong>tidak dapat ditandai selesai</strong> sebelum pelunasan dicatat. Silakan gunakan tombol "Catat Pelunasan" jika customer membayar di lokasi kasir venue.
+          </p>
+        </div>
       </div>
-      <template v-if="detail && (bisa.setujui || bisa.tolak || bisa.selesai || bisa.batal)" #aksi>
+      <template v-if="detail && (bisa.setujui || bisa.tolak || bisa.selesai || bisa.batal || bisa.lewatBelumLunas || bisa.catatPelunasan)" #aksi>
         <button v-if="bisa.tolak" class="btn btn-danger" :disabled="memproses" @click="modalAlasan = 'tolak'">Tolak</button>
         <button v-if="bisa.batal" class="btn btn-danger" :disabled="memproses" @click="modalAlasan = 'batal'">Batalkan</button>
-        <button v-if="bisa.selesai" class="btn btn-outline" :disabled="memproses" @click="jalankanAksi('selesai')">Tandai selesai</button>
+        <button v-if="bisa.catatPelunasan" class="btn btn-outline" :disabled="memproses" @click="modalBayar = true">
+          Catat Pelunasan
+        </button>
+        <button v-if="bisa.selesai" class="btn btn-primary" :disabled="memproses" @click="jalankanAksi('selesai')">
+          Tandai selesai
+        </button>
+        <button
+          v-else-if="bisa.lewatBelumLunas"
+          class="btn btn-outline"
+          disabled
+          title="Booking belum lunas. Catat pelunasan terlebih dahulu."
+        >
+          Tandai selesai (Terkunci)
+        </button>
         <button v-if="bisa.setujui" class="btn btn-primary" :disabled="memproses" @click="jalankanAksi('setujui')">Setujui</button>
       </template>
     </ModalDialog>
@@ -258,6 +320,32 @@ if (route.query.q) buka(route.query.q)
         <button class="btn btn-ghost" @click="modalAlasan = null">Kembali</button>
         <button class="btn btn-danger" :disabled="memproses || alasan.trim().length < 5" @click="jalankanAksi(modalAlasan)">
           {{ modalAlasan === 'tolak' ? 'Tolak booking' : 'Batalkan booking' }}
+        </button>
+      </template>
+    </ModalDialog>
+
+    <ModalDialog
+      :buka="modalBayar"
+      :judul="`Catat Pelunasan · ${detail?.kode || ''}`"
+      @tutup="modalBayar = false"
+    >
+      <div class="stack">
+        <p>
+          Catat pelunasan sisa tagihan untuk customer <strong>{{ detail?.customer.nama }}</strong> sebesar <strong>{{ rupiah(detail?.sisa_tagihan || 0) }}</strong>.
+        </p>
+        <label class="field">
+          <span>Metode Pembayaran</span>
+          <select v-model="metodeBayar" class="select">
+            <option value="qris">QRIS</option>
+            <option value="transfer">Transfer Bank</option>
+            <option value="ewallet">E-Wallet / Kasir Tunai</option>
+          </select>
+        </label>
+      </div>
+      <template #aksi>
+        <button class="btn btn-ghost" :disabled="memproses" @click="modalBayar = false">Batal</button>
+        <button class="btn btn-primary" :disabled="memproses" @click="konfirmasiPelunasan">
+          Simpan Pelunasan
         </button>
       </template>
     </ModalDialog>

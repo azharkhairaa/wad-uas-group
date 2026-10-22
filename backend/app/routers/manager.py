@@ -34,6 +34,7 @@ from app.schemas import (
     HalamanBooking,
     JadwalIn,
     JadwalOut,
+    PaymentIn,
     VenueIn,
     VenueManagerOut,
     VenueUpdate,
@@ -446,6 +447,21 @@ def tolak(
 )
 def selesai(kode: str, db: Session = Depends(get_db), manager: User = Depends(require_manager)):
     return layanan.selesaikan(db, booking_milik(db, kode, manager))
+
+@router.post(
+    "/bookings/{kode}/payments",
+    response_model=BookingManagerDetailOut,
+    summary="Catat pembayaran pelunasan oleh manager",
+    description="Manager mencatat pelunasan langsung jika customer membayar di lokasi venue.",
+)
+def catat_pelunasan(
+    kode: str,
+    data: PaymentIn,
+    db: Session = Depends(get_db),
+    manager: User = Depends(require_manager),
+):
+    return layanan.bayar(db, booking_milik(db, kode, manager), data)
+
 
 @router.post(
     "/bookings/{kode}/cancel",
