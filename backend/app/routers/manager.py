@@ -15,6 +15,7 @@ from app.models import (
     BookingSlot,
     Court,
     CourtClosure,
+    Role,
     StatusBooking,
     User,
     Venue,
@@ -58,7 +59,7 @@ def venue_milik(db: Session, venue_id: int, manager: User) -> Venue:
         .options(selectinload(Venue.courts), selectinload(Venue.jadwal))
         .where(Venue.id == venue_id)
     ).first()
-    if venue is None or venue.manager_id != manager.id:
+    if venue is None or (manager.role != Role.SUPERADMIN and venue.manager_id != manager.id):
         raise HTTPException(status_code=404, detail="Venue tidak ditemukan")
     return venue
 
@@ -66,13 +67,15 @@ def court_milik(db: Session, court_id: int, manager: User) -> Court:
     court = db.scalars(
         select(Court).options(selectinload(Court.venue)).where(Court.id == court_id)
     ).first()
-    if court is None or court.venue.manager_id != manager.id:
+    if court is None or (manager.role != Role.SUPERADMIN and court.venue.manager_id != manager.id):
         raise HTTPException(status_code=404, detail="Court tidak ditemukan")
     return court
 
 def booking_milik(db: Session, kode: str, manager: User) -> Booking:
     booking = layanan.ambil_booking(db, kode)
-    if booking is None or booking.venue.manager_id != manager.id:
+    if booking is None:
+        raise HTTPException(status_code=404, detail="Booking tidak ditemukan")
+    if manager.role != Role.SUPERADMIN and booking.venue.manager_id != manager.id:
         raise HTTPException(status_code=404, detail="Booking tidak ditemukan")
     return booking
 
@@ -92,12 +95,10 @@ def buat_slug(db: Session, nama: str) -> str:
 
 @router.get("/venues", response_model=list[VenueManagerOut], summary="Venue yang saya kelola")
 def daftar_venue(db: Session = Depends(get_db), manager: User = Depends(require_manager)):
-    venues = db.scalars(
-        select(Venue)
-        .options(selectinload(Venue.courts), selectinload(Venue.jadwal))
-        .where(Venue.manager_id == manager.id)
-        .order_by(Venue.nama)
-    ).all()
+    query = select(Venue).options(selectinload(Venue.courts), selectinload(Venue.jadwal))
+    if manager.role != Role.SUPERADMIN:
+        query = query.where(Venue.manager_id == manager.id)
+    venues = db.scalars(query.order_by(Venue.nama)).all()
     return [ke_detail(v, semua_court=True) for v in venues]
 
 @router.post(
@@ -382,6 +383,8 @@ def booking_masuk(
     ketersediaan.kedaluwarsakan_booking(db)
     if venue_id is not None:
         venue_ids = [venue_milik(db, venue_id, manager).id]
+    elif manager.role == Role.SUPERADMIN:
+        venue_ids = db.scalars(select(Venue.id)).all()
     else:
         venue_ids = db.scalars(select(Venue.id).where(Venue.manager_id == manager.id)).all()
 

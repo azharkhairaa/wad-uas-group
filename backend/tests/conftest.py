@@ -79,6 +79,10 @@ def manager(db):
 def manager_lain(db):
     return buat_user(db, "manager2@example.com", Role.MANAGER)
 
+@pytest.fixture
+def superadmin(db):
+    return buat_user(db, "superadmin@example.com", Role.SUPERADMIN)
+
 def buat_venue(
     db,
     manager: User,

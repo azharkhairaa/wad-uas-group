@@ -67,3 +67,44 @@ def test_penutupan_milik_manager_lain_tidak_bisa_dihapus(login, manager, manager
     assert res.status_code == 201
     lain = login(manager_lain.email)
     assert lain.delete(f"/api/v1/manager/closures/{res.json()['id']}").status_code == 404
+
+def test_superadmin_akses_semua_venue_dan_kelola_pengguna(
+    db, login, superadmin, manager, customer, venue_court
+):
+    venue, court = venue_court
+    client_admin = login(superadmin.email)
+
+    # superadmin bisa melihat semua venue manager
+    venues = client_admin.get("/api/v1/manager/venues").json()
+    assert any(v["id"] == venue.id for v in venues)
+
+    # superadmin bisa melihat daftar pengguna
+    res_users = client_admin.get("/api/v1/admin/users")
+    assert res_users.status_code == 200
+    assert len(res_users.json()) >= 3
+
+    # superadmin bisa membuat akun manager baru
+    data_baru = {
+        "nama": "Manager Baru",
+        "email": "manager.baru@example.com",
+        "no_hp": "08123456789",
+        "role": "manager",
+        "password": "Password123",
+    }
+    res_buat = client_admin.post("/api/v1/admin/users", json=data_baru)
+    assert res_buat.status_code == 201
+    user_baru_id = res_buat.json()["id"]
+    assert res_buat.json()["email"] == "manager.baru@example.com"
+    assert res_buat.json()["role"] == "manager"
+
+    # superadmin bisa menonaktifkan pengguna
+    res_patch = client_admin.patch(
+        f"/api/v1/admin/users/{user_baru_id}", json={"is_active": False}
+    )
+    assert res_patch.status_code == 200
+    assert res_patch.json()["is_active"] is False
+
+    # customer dan manager biasa tidak bisa mengakses /api/v1/admin/users
+    assert login(customer.email).get("/api/v1/admin/users").status_code == 403
+    assert login(manager.email).get("/api/v1/admin/users").status_code == 403
+

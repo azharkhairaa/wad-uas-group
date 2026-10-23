@@ -65,11 +65,16 @@ def get_optional_user(
     return _baca_user(request, token, None, db)
 
 def require_customer(user: User = Depends(get_current_user)) -> User:
-    if user.role != Role.CUSTOMER:
+    if user.role not in (Role.CUSTOMER, Role.SUPERADMIN):
         raise HTTPException(status_code=403, detail="Fitur ini khusus akun customer")
     return user
 
 def require_manager(user: User = Depends(get_current_user)) -> User:
-    if user.role != Role.MANAGER:
+    if user.role not in (Role.MANAGER, Role.SUPERADMIN):
         raise HTTPException(status_code=403, detail="Fitur ini khusus venue manager")
+    return user
+
+def require_superadmin(user: User = Depends(get_current_user)) -> User:
+    if user.role != Role.SUPERADMIN:
+        raise HTTPException(status_code=403, detail="Fitur ini khusus superadmin")
     return user

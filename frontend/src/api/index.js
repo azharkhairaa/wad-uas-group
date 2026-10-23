@@ -48,3 +48,10 @@ export const managerApi = {
   agenda: (id, params) => http.get(`${m}/venues/${id}/agenda`, params),
   dashboard: (id, params) => http.get(`${m}/venues/${id}/dashboard`, params),
 }
+
+export const adminApi = {
+  users: (params) => http.get('/admin/users', params),
+  tambahUser: (data) => http.post('/admin/users', data),
+  ubahUser: (id, data) => http.patch(`/admin/users/${id}`, data),
+}
+

@@ -13,7 +13,7 @@ from app.config import CORS_ORIGINS, STATIC_DIR
 from app.database import get_db
 from app.errors import AppError
 from app.limiter import limiter, rate_limit_handler
-from app.routers import auth, bookings, manager, venues
+from app.routers import admin, auth, bookings, manager, venues
 
 log = logging.getLogger("uvicorn.error")
 
@@ -29,6 +29,7 @@ app = FastAPI(
         {"name": "venues", "description": "Katalog venue, court, tarif dan ketersediaan slot"},
         {"name": "bookings", "description": "Booking milik customer dan pembayaran simulasi"},
         {"name": "manager", "description": "Khusus venue manager, kelola court sampai dashboard"},
+        {"name": "admin", "description": "Khusus superadmin, kelola akun pengguna dan manager"},
         {"name": "system", "description": "Health check"},
     ],
 )
@@ -73,6 +74,7 @@ app.include_router(auth.router)
 app.include_router(venues.router)
 app.include_router(bookings.router)
 app.include_router(manager.router)
+app.include_router(admin.router)
 
 @app.get("/api/health", tags=["system"], summary="Cek API dan koneksi database")
 def health(db: Session = Depends(get_db)):

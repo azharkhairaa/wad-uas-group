@@ -387,3 +387,28 @@ class DashboardOut(BaseModel):
     per_olahraga: list[OkupansiOlahraga]
     jam_sibuk: list[JamSibuk]
     status: list[JumlahStatus]
+
+class UserAdminOut(OutputModel):
+    id: int
+    nama: str
+    email: str
+    no_hp: str | None
+    role: Role
+    is_active: bool
+    created_at: datetime
+    venues: list[str] = []
+
+class UserAdminCreateIn(InputModel):
+    nama: str = Field(min_length=2, max_length=100)
+    email: EmailStr
+    no_hp: str | None = Field(default=None, max_length=20)
+    role: Role = Role.MANAGER
+    password: str = Field(min_length=6, max_length=100)
+
+class UserAdminUpdateIn(InputModel):
+    nama: str | None = Field(default=None, min_length=2, max_length=100)
+    no_hp: str | None = Field(default=None, max_length=20)
+    role: Role | None = None
+    is_active: bool | None = None
+    password: str | None = Field(default=None, min_length=6, max_length=100)
+

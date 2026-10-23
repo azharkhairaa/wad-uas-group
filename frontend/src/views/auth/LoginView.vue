@@ -16,12 +16,6 @@ const password = ref('')
 const error = ref('')
 const loading = ref(false)
 
-const AKUN_DEMO = [
-  { label: 'Customer', email: 'budi@example.com' },
-  { label: 'Manager Dago & Setiabudi', email: 'manager.dago@lapangin.id' },
-  { label: 'Manager Arcamanik & Antapani', email: 'manager.arcamanik@lapangin.id' },
-]
-
 // redirect hanya ke path internal supaya tidak bisa dipakai untuk open redirect
 function tujuan(user) {
   const redirect = String(route.query.redirect || '')
@@ -29,11 +23,18 @@ function tujuan(user) {
     const rute = router.resolve(redirect)
     const butuhManager = rute.matched.some((r) => r.meta.role === 'manager')
     const butuhCustomer = rute.matched.some((r) => r.meta.role === 'customer')
-    if (!(butuhManager && user.role !== 'manager') && !(butuhCustomer && user.role !== 'customer')) {
+    const bolehAkses =
+      user.role === 'superadmin' ||
+      (butuhManager && user.role === 'manager') ||
+      (butuhCustomer && user.role === 'customer') ||
+      (!butuhManager && !butuhCustomer)
+    if (bolehAkses) {
       return redirect
     }
   }
-  return user.role === 'manager' ? { name: 'manager-dashboard' } : { name: 'home' }
+  return user.role === 'manager' || user.role === 'superadmin'
+    ? { name: 'manager-dashboard' }
+    : { name: 'home' }
 }
 
 async function masuk() {
@@ -48,11 +49,6 @@ async function masuk() {
   } finally {
     loading.value = false
   }
-}
-
-function isiDemo(akun) {
-  email.value = akun.email
-  password.value = 'Lapangin2026'
 }
 </script>
 
@@ -85,15 +81,6 @@ function isiDemo(akun) {
         Belum punya akun?
         <RouterLink :to="{ name: 'register', query: route.query }">Daftar sebagai customer</RouterLink>
       </p>
-
-      <div class="demo">
-        <p class="small"><strong>Akun demo</strong> (password <code>Lapangin2026</code>)</p>
-        <div class="row">
-          <button v-for="a in AKUN_DEMO" :key="a.email" type="button" class="btn btn-outline btn-sm" @click="isiDemo(a)">
-            {{ a.label }}
-          </button>
-        </div>
-      </div>
     </form>
   </div>
 </template>
@@ -120,21 +107,5 @@ h1 {
 
 .tengah {
   text-align: center;
-}
-
-.demo {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 14px;
-  border-radius: var(--radius);
-  background: var(--surface-2);
-  border: 1px dashed var(--border-strong);
-}
-
-code {
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: var(--surface);
 }
 </style>

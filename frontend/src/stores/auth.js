@@ -9,8 +9,9 @@ export const useAuthStore = defineStore('auth', () => {
   let memuat = null
 
   const sudahLogin = computed(() => user.value !== null)
-  const isManager = computed(() => user.value?.role === 'manager')
-  const isCustomer = computed(() => user.value?.role === 'customer')
+  const isSuperadmin = computed(() => user.value?.role === 'superadmin')
+  const isManager = computed(() => user.value?.role === 'manager' || user.value?.role === 'superadmin')
+  const isCustomer = computed(() => user.value?.role === 'customer' || user.value?.role === 'superadmin')
 
   // token ada di cookie httpOnly, jadi status login ditanyakan ke /auth/me
   function muat() {
@@ -51,5 +52,17 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
   }
 
-  return { user, siap, sudahLogin, isManager, isCustomer, muat, login, register, logout, sesiHabis }
+  return {
+    user,
+    siap,
+    sudahLogin,
+    isSuperadmin,
+    isManager,
+    isCustomer,
+    muat,
+    login,
+    register,
+    logout,
+    sesiHabis,
+  }
 })

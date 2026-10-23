@@ -74,6 +74,12 @@ const router = createRouter({
           name: 'manager-venue',
           component: () => import('@/views/manager/VenueSettingsView.vue'),
         },
+        {
+          path: 'users',
+          name: 'manager-users',
+          component: () => import('@/views/manager/AdminUsersView.vue'),
+          meta: { superadminOnly: true },
+        },
       ],
     },
     {
@@ -100,8 +106,11 @@ router.beforeEach(async (to) => {
   if (to.matched.some((r) => r.meta.auth) && !auth.sudahLogin) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
+  if (to.matched.some((r) => r.meta.superadminOnly) && !auth.isSuperadmin) {
+    return { name: 'forbidden' }
+  }
   const role = to.matched.find((r) => r.meta.role)?.meta.role
-  if (role && auth.user?.role !== role) {
+  if (role && auth.user?.role !== role && !auth.isSuperadmin) {
     return { name: 'forbidden' }
   }
   return true

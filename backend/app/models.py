@@ -25,6 +25,7 @@ from app.database import Base
 class Role(enum.StrEnum):
     CUSTOMER = "customer"
     MANAGER = "manager"
+    SUPERADMIN = "superadmin"
 
 class Olahraga(enum.StrEnum):
     TENNIS = "tennis"

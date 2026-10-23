@@ -1,12 +1,15 @@
 <script setup>
-import { onMounted } from 'vue'
-import { RouterLink, RouterView } from 'vue-router'
+import { computed, onMounted } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 
 import AppIcon from '@/components/AppIcon'
 import RequestState from '@/components/RequestState.vue'
+import { useAuthStore } from '@/stores/auth'
 import { useManagerStore } from '@/stores/manager'
 
+const auth = useAuthStore()
 const manager = useManagerStore()
+const route = useRoute()
 
 const MENU = [
   { to: '/manager', label: 'Dashboard', ikon: 'chart', exact: true },
@@ -16,6 +19,14 @@ const MENU = [
   { to: '/manager/schedule', label: 'Jam buka & penutupan', ikon: 'clock' },
   { to: '/manager/venue', label: 'Pengaturan venue', ikon: 'sliders' },
 ]
+
+const menuList = computed(() => {
+  const items = [...MENU]
+  if (auth.isSuperadmin) {
+    items.push({ to: '/manager/users', label: 'Kelola akun', ikon: 'users' })
+  }
+  return items
+})
 
 onMounted(() => {
   if (!manager.venues.length) manager.muat()
@@ -35,7 +46,7 @@ onMounted(() => {
       </label>
       <nav aria-label="Menu manager">
         <RouterLink
-          v-for="m in MENU"
+          v-for="m in menuList"
           :key="m.to"
           :to="m.to"
           class="menu"
@@ -55,8 +66,11 @@ onMounted(() => {
     </aside>
 
     <section class="konten">
-      <!-- pengaturan venue tetap bisa dibuka walau belum punya venue, untuk menambah yang pertama -->
-      <RouterView v-if="manager.venue || $route.name === 'manager-venue'" :key="manager.venue?.id ?? 0" />
+      <!-- pengaturan venue & kelola pengguna tetap bisa dibuka walau belum punya venue -->
+      <RouterView
+        v-if="manager.venue || route.name === 'manager-venue' || route.name === 'manager-users'"
+        :key="route.name === 'manager-users' ? 'users' : (manager.venue?.id ?? 0)"
+      />
       <RequestState
         v-else
         :loading="manager.loading || (!manager.error && !manager.venues.length && !manager.sudahDimuat)"

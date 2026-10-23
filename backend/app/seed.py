@@ -257,6 +257,13 @@ def jalankan() -> None:
     reset(db)
 
     hash_demo = hash_password(PASSWORD_DEMO)
+    superadmin = User(
+        nama="Super Admin Lapangin",
+        email="admin@lapangin.id",
+        no_hp="08110000000",
+        role=Role.SUPERADMIN,
+        password_hash=hash_demo,
+    )
     managers = [
         User(nama=n, email=e, no_hp=hp, role=Role.MANAGER, password_hash=hash_demo)
         for n, e, hp in MANAGER
@@ -265,7 +272,7 @@ def jalankan() -> None:
         User(nama=n, email=e, no_hp=hp, role=Role.CUSTOMER, password_hash=hash_demo)
         for n, e, hp in CUSTOMER
     ]
-    db.add_all(managers + customers)
+    db.add_all([superadmin] + managers + customers)
     db.flush()
 
     venues: dict[str, Venue] = {}
