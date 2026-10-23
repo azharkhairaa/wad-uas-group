@@ -229,7 +229,10 @@ async function setujui(kode) {
             <div class="row">
               <!-- menolak butuh alasan, jadi diarahkan ke detail booking -->
               <RouterLink :to="{ name: 'manager-bookings', query: { q: b.kode } }" class="btn btn-outline btn-sm">Detail</RouterLink>
-              <button class="btn btn-primary btn-sm" :disabled="memproses === b.kode" @click="setujui(b.kode)">Setujui</button>
+              <button class="btn btn-primary btn-sm" :disabled="memproses === b.kode" @click="setujui(b.kode)">
+                <span v-if="memproses === b.kode" class="spinner" aria-hidden="true" />
+                {{ memproses === b.kode ? 'Menyetujui...' : 'Setujui' }}
+              </button>
             </div>
           </li>
         </ul>

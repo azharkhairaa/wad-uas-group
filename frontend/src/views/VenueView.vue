@@ -370,7 +370,7 @@ onBeforeUnmount(() => clearInterval(timer))
                   @click="booking"
                 >
                   <span v-if="mengirim" class="spinner" aria-hidden="true" />
-                  {{ auth.sudahLogin ? 'Booking sekarang' : 'Login untuk booking' }}
+                  {{ mengirim ? 'Membuat booking...' : (auth.sudahLogin ? 'Booking sekarang' : 'Login untuk booking') }}
                 </button>
                 <p v-if="auth.isManager" class="muted small">Akun venue manager tidak bisa membuat booking.</p>
                 <p v-else class="muted small">
@@ -392,7 +392,8 @@ onBeforeUnmount(() => clearInterval(timer))
             <span class="muted small">{{ courtDipilih.court.nama }} · {{ jam(pilihan.mulai) }}, {{ pilihan.durasi }} jam</span>
           </div>
           <button class="btn btn-accent" :disabled="mengirim || auth.isManager" @click="booking">
-            {{ auth.sudahLogin ? 'Booking' : 'Login' }}
+            <span v-if="mengirim" class="spinner" aria-hidden="true" />
+            {{ mengirim ? 'Memproses...' : (auth.sudahLogin ? 'Booking' : 'Login') }}
           </button>
         </div>
       </template>

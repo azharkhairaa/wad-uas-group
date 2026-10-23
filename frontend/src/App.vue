@@ -3,6 +3,7 @@ import { RouterView } from 'vue-router'
 
 import AppFooter from '@/components/AppFooter.vue'
 import AppHeader from '@/components/AppHeader.vue'
+import LoadingBar from '@/components/LoadingBar.vue'
 import ToastHost from '@/components/ToastHost.vue'
 import { useTheme } from '@/composables/useTheme'
 
@@ -11,10 +12,15 @@ useTheme()
 
 <template>
   <div class="app">
+    <LoadingBar />
     <a class="skip" href="#konten">Lewati ke konten</a>
     <AppHeader />
     <main id="konten" class="app-main">
-      <RouterView />
+      <RouterView v-slot="{ Component, route }">
+        <Transition name="page" mode="out-in">
+          <component :is="Component" :key="route.matched[0]?.path || route.path" />
+        </Transition>
+      </RouterView>
     </main>
     <AppFooter />
     <ToastHost />

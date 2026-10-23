@@ -65,7 +65,7 @@ function jumlah(kode) {
         <template #aksi-kosong>
           <RouterLink to="/" class="btn btn-outline btn-sm">Cari lapang</RouterLink>
         </template>
-        <ul class="daftar">
+        <TransitionGroup name="fade-list" tag="ul" class="daftar">
           <li v-for="b in terpilih" :key="b.id">
             <RouterLink :to="{ name: 'booking-detail', params: { kode: b.kode } }" class="item card">
               <span class="ikon"><AppIcon :name="b.court.olahraga" :size="22" /></span>
@@ -88,7 +88,7 @@ function jumlah(kode) {
               </div>
             </RouterLink>
           </li>
-        </ul>
+        </TransitionGroup>
       </RequestState>
     </div>
   </div>

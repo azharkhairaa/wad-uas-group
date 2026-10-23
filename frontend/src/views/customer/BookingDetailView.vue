@@ -216,7 +216,7 @@ onBeforeUnmount(() => clearInterval(timer))
                 </fieldset>
                 <button v-if="bisaBayarDp" class="btn btn-accent btn-block" :disabled="!!memproses" @click="bayar('deposit')">
                   <span v-if="memproses === 'deposit'" class="spinner" aria-hidden="true" />
-                  Bayar DP {{ rupiah(b.nominal_deposit) }}
+                  {{ memproses === 'deposit' ? 'Memproses pembayaran...' : `Bayar DP ${rupiah(b.nominal_deposit)}` }}
                 </button>
                 <button
                   v-if="bisaLunasi"
@@ -226,7 +226,7 @@ onBeforeUnmount(() => clearInterval(timer))
                   @click="bayar('pelunasan')"
                 >
                   <span v-if="memproses === 'pelunasan'" class="spinner" aria-hidden="true" />
-                  {{ bisaBayarDp ? 'Bayar lunas' : 'Lunasi sisa' }} {{ rupiah(b.sisa_tagihan) }}
+                  {{ memproses === 'pelunasan' ? 'Memproses pelunasan...' : `${bisaBayarDp ? 'Bayar lunas' : 'Lunasi sisa'} ${rupiah(b.sisa_tagihan)}` }}
                 </button>
                 <p class="muted small">Tidak ada uang sungguhan yang ditarik, pembayaran hanya simulasi.</p>
               </template>
@@ -260,9 +260,10 @@ onBeforeUnmount(() => clearInterval(timer))
             </label>
           </div>
           <template #aksi>
-            <button class="btn btn-ghost" @click="modalBatal = false">Tidak jadi</button>
+            <button class="btn btn-ghost" :disabled="memproses === 'batal'" @click="modalBatal = false">Tidak jadi</button>
             <button class="btn btn-danger" :disabled="memproses === 'batal'" @click="batalkan">
-              Ya, batalkan
+              <span v-if="memproses === 'batal'" class="spinner" aria-hidden="true" />
+              {{ memproses === 'batal' ? 'Membatalkan...' : 'Ya, batalkan' }}
             </button>
           </template>
         </ModalDialog>

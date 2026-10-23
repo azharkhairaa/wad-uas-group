@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import { onSesiBerakhir } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
+import { useLoadingStore } from '@/stores/loading'
 import { useToastStore } from '@/stores/toast'
 import HomeView from '@/views/HomeView.vue'
 
@@ -97,6 +98,9 @@ const router = createRouter({
 
 // penjaga rute: cek login dan peran sebelum halaman dibuka
 router.beforeEach(async (to) => {
+  const loading = useLoadingStore()
+  loading.start()
+
   const auth = useAuthStore()
   await auth.muat()
 
@@ -114,6 +118,16 @@ router.beforeEach(async (to) => {
     return { name: 'forbidden' }
   }
   return true
+})
+
+router.afterEach(() => {
+  const loading = useLoadingStore()
+  loading.finish()
+})
+
+router.onError(() => {
+  const loading = useLoadingStore()
+  loading.fail()
 })
 
 // token kedaluwarsa di tengah jalan: kembali ke login tanpa kehilangan halaman tujuan

@@ -74,7 +74,7 @@ async function masuk() {
 
       <button class="btn btn-primary btn-lg btn-block" :disabled="loading || !email || !password">
         <span v-if="loading" class="spinner" aria-hidden="true" />
-        Login
+        {{ loading ? 'Memproses login...' : 'Login' }}
       </button>
 
       <p class="small muted tengah">

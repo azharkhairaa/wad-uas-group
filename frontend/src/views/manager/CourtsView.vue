@@ -32,6 +32,7 @@ const editId = ref(null)
 const modal = ref(false)
 const hapus = ref(null)
 const menyimpan = ref(false)
+const menghapus = ref(false)
 const pesanError = ref('')
 
 function tambah() {
@@ -99,6 +100,7 @@ async function gantiAktif(c) {
 }
 
 async function konfirmasiHapus() {
+  menghapus.value = true
   try {
     await managerApi.hapusCourt(hapus.value.id)
     toast.sukses(`${hapus.value.nama} dihapus.`)
@@ -106,6 +108,7 @@ async function konfirmasiHapus() {
   } catch (e) {
     toast.gagal(e.message)
   } finally {
+    menghapus.value = false
     hapus.value = null
   }
 }
@@ -207,9 +210,10 @@ async function konfirmasiHapus() {
         </label>
       </form>
       <template #aksi>
-        <button class="btn btn-ghost" @click="modal = false">Batal</button>
+        <button class="btn btn-ghost" :disabled="menyimpan" @click="modal = false">Batal</button>
         <button class="btn btn-primary" type="submit" form="form-court" :disabled="menyimpan">
-          {{ editId ? 'Simpan perubahan' : 'Tambah lapang' }}
+          <span v-if="menyimpan" class="spinner" aria-hidden="true" />
+          {{ menyimpan ? 'Menyimpan...' : (editId ? 'Simpan perubahan' : 'Tambah lapang') }}
         </button>
       </template>
     </ModalDialog>
@@ -220,8 +224,11 @@ async function konfirmasiHapus() {
         dihapus, nonaktifkan saja supaya riwayatnya tetap utuh.
       </p>
       <template #aksi>
-        <button class="btn btn-ghost" @click="hapus = null">Batal</button>
-        <button class="btn btn-danger" @click="konfirmasiHapus">Hapus</button>
+        <button class="btn btn-ghost" :disabled="menghapus" @click="hapus = null">Batal</button>
+        <button class="btn btn-danger" :disabled="menghapus" @click="konfirmasiHapus">
+          <span v-if="menghapus" class="spinner" aria-hidden="true" />
+          {{ menghapus ? 'Menghapus...' : 'Hapus' }}
+        </button>
       </template>
     </ModalDialog>
   </div>

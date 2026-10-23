@@ -28,6 +28,8 @@ function pesanError(detail, status) {
   return `Permintaan gagal (${status})`
 }
 
+import { useLoadingStore } from '@/stores/loading'
+
 let saatSesiBerakhir = null
 
 export function onSesiBerakhir(fungsi) {
@@ -35,6 +37,14 @@ export function onSesiBerakhir(fungsi) {
 }
 
 export async function request(path, { method = 'GET', body, params } = {}) {
+  let loadingStore = null
+  try {
+    loadingStore = useLoadingStore()
+    loadingStore.startRequest()
+  } catch {
+    // pinia belum siap atau konteks non-vue
+  }
+
   const url = new URL(BASE + path, window.location.origin)
   for (const [kunci, nilai] of Object.entries(params || {})) {
     if (nilai !== undefined && nilai !== null && nilai !== '') url.searchParams.set(kunci, nilai)
@@ -54,6 +64,7 @@ export async function request(path, { method = 'GET', body, params } = {}) {
       credentials: 'same-origin',
     })
   } catch {
+    loadingStore?.finishRequest(false)
     throw new ApiError('Tidak bisa terhubung ke server. Cek koneksi lalu coba lagi.', 0)
   }
 
@@ -67,9 +78,11 @@ export async function request(path, { method = 'GET', body, params } = {}) {
 
   // cek response.ok dulu, jangan anggap request selalu berhasil
   if (!response.ok) {
+    loadingStore?.finishRequest(false)
     if (response.status === 401 && saatSesiBerakhir) saatSesiBerakhir()
     throw new ApiError(pesanError(data?.detail, response.status), response.status, data?.detail)
   }
+  loadingStore?.finishRequest(true)
   return data
 }
 

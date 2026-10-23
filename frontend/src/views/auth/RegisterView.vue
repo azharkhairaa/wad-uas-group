@@ -95,7 +95,7 @@ async function daftar() {
 
       <button class="btn btn-primary btn-lg btn-block" :disabled="loading">
         <span v-if="loading" class="spinner" aria-hidden="true" />
-        Buat akun
+        {{ loading ? 'Mendaftarkan akun...' : 'Buat akun' }}
       </button>
       <p class="small muted tengah">
         Sudah punya akun? <RouterLink :to="{ name: 'login', query: route.query }">Login</RouterLink>

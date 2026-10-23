@@ -7,13 +7,13 @@ const IKON = { success: 'check', danger: 'alert', info: 'info' }
 </script>
 
 <template>
-  <div class="toasts" role="status" aria-live="polite">
+  <TransitionGroup name="toast" tag="div" class="toasts" role="status" aria-live="polite">
     <div v-for="t in toast.daftar" :key="t.id" class="toast" :class="t.jenis">
       <span class="ikon"><AppIcon :name="IKON[t.jenis]" :size="14" :stroke="2.5" /></span>
       <p>{{ t.pesan }}</p>
       <button class="tutup" aria-label="Tutup notifikasi" @click="toast.tutup(t.id)"><AppIcon name="close" :size="16" /></button>
     </div>
-  </div>
+  </TransitionGroup>
 </template>
 
 <style scoped>
@@ -38,7 +38,6 @@ const IKON = { success: 'check', danger: 'alert', info: 'info' }
   border: 1px solid var(--border);
   box-shadow: 0 12px 32px rgb(0 0 0 / 18%);
   font-size: 0.9rem;
-  animation: masuk 0.2s ease-out;
 }
 
 .toast p {

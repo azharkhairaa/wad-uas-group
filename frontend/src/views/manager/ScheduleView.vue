@@ -63,6 +63,7 @@ const form = reactive({
   alasan: '',
 })
 const menambah = ref(false)
+const menghapusId = ref(null)
 const errorTutup = ref('')
 
 async function tambahPenutupan() {
@@ -87,12 +88,15 @@ async function tambahPenutupan() {
 }
 
 async function hapusPenutupan(p) {
+  menghapusId.value = p.id
   try {
     await managerApi.hapusPenutupan(p.id)
     toast.info(`${p.court.nama} dibuka kembali.`)
     muatPenutupan()
   } catch (e) {
     toast.gagal(e.message)
+  } finally {
+    menghapusId.value = null
   }
 }
 </script>
@@ -145,7 +149,10 @@ async function hapusPenutupan(p) {
       </div>
       <div class="kaki">
         <p class="muted small">Perubahan ditolak kalau ada booking aktif yang jatuh di luar jam baru.</p>
-        <button class="btn btn-primary" :disabled="menyimpan" @click="simpanJadwal">Simpan jam operasional</button>
+        <button class="btn btn-primary" :disabled="menyimpan" @click="simpanJadwal">
+          <span v-if="menyimpan" class="spinner" aria-hidden="true" />
+          {{ menyimpan ? 'Menyimpan...' : 'Simpan jam operasional' }}
+        </button>
       </div>
     </section>
 
@@ -187,7 +194,10 @@ async function hapusPenutupan(p) {
           <span>Alasan</span>
           <input v-model="form.alasan" class="input" minlength="3" maxlength="160" required placeholder="Mis. ganti karpet" />
         </label>
-        <button class="btn btn-primary" :disabled="menambah || form.alasan.trim().length < 3">Tutup lapang</button>
+        <button class="btn btn-primary" :disabled="menambah || form.alasan.trim().length < 3">
+          <span v-if="menambah" class="spinner" aria-hidden="true" />
+          {{ menambah ? 'Menutup lapang...' : 'Tutup lapang' }}
+        </button>
       </form>
 
       <RequestState
@@ -209,7 +219,10 @@ async function hapusPenutupan(p) {
                 · {{ p.alasan }}
               </span>
             </div>
-            <button class="btn btn-ghost btn-sm" @click="hapusPenutupan(p)">Buka lagi</button>
+            <button class="btn btn-ghost btn-sm" :disabled="menghapusId === p.id" @click="hapusPenutupan(p)">
+              <span v-if="menghapusId === p.id" class="spinner" aria-hidden="true" />
+              {{ menghapusId === p.id ? 'Membuka...' : 'Buka lagi' }}
+            </button>
           </li>
         </ul>
       </RequestState>

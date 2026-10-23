@@ -24,11 +24,18 @@ watch(
   },
 )
 
+const keluarLoading = ref(false)
+
 async function keluar() {
-  await auth.logout()
-  manager.reset()
-  toast.info('Kamu sudah logout.')
-  router.push({ name: 'home' })
+  keluarLoading.value = true
+  try {
+    await auth.logout()
+    manager.reset()
+    toast.info('Kamu sudah logout.')
+    router.push({ name: 'home' })
+  } finally {
+    keluarLoading.value = false
+  }
 }
 </script>
 
@@ -74,7 +81,10 @@ async function keluar() {
                 <small>{{ auth.isManager ? 'Venue manager' : 'Customer' }}</small>
               </span>
             </div>
-            <button class="btn btn-outline btn-sm" @click="keluar">Logout</button>
+            <button class="btn btn-outline btn-sm" :disabled="keluarLoading" @click="keluar">
+              <span v-if="keluarLoading" class="spinner" aria-hidden="true" />
+              {{ keluarLoading ? 'Keluar...' : 'Logout' }}
+            </button>
           </template>
           <template v-else-if="auth.siap">
             <RouterLink

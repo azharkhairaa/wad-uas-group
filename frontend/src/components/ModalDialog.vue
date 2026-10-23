@@ -65,8 +65,36 @@ onBeforeUnmount(() => dialog.value?.open && dialog.value.close())
   box-shadow: 0 24px 64px rgb(0 0 0 / 30%);
 }
 
+.modal[open] {
+  animation: modal-muncul 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .modal::backdrop {
   background: rgb(8 16 12 / 55%);
+}
+
+.modal[open]::backdrop {
+  animation: backdrop-muncul 0.22s ease-out;
+}
+
+@keyframes modal-muncul {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes backdrop-muncul {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .kepala {

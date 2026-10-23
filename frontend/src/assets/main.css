@@ -285,13 +285,19 @@ svg {
   transition:
     background-color 0.15s,
     border-color 0.15s,
-    color 0.15s;
+    color 0.15s,
+    transform 0.1s,
+    box-shadow 0.15s;
   white-space: nowrap;
 }
 
 .btn:hover {
   text-decoration: none;
   background: var(--surface-3);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn:disabled {
@@ -646,6 +652,110 @@ svg {
   to {
     background-position: -200% 0;
   }
+}
+
+/* ---------- transisi & animasi halus */
+
+/* transisi halaman router utama */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* transisi sub-rute manager & tata letak */
+.fade-subtle-enter-active,
+.fade-subtle-leave-active {
+  transition: opacity 0.18s ease-in-out, transform 0.18s ease-in-out;
+}
+
+.fade-subtle-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.fade-subtle-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* transisi RequestState dari memuat ke isi data */
+.state-fade-enter-active,
+.state-fade-leave-active {
+  transition: opacity 0.2s ease-in-out;
+}
+
+.state-fade-enter-from,
+.state-fade-leave-to {
+  opacity: 0;
+}
+
+/* transisi notifikasi toast */
+.toast-enter-active {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-leave-active {
+  transition: all 0.2s ease-in;
+  position: absolute;
+  width: 100%;
+}
+
+.toast-enter-from {
+  opacity: 0;
+  transform: translateY(16px) scale(0.95);
+}
+
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(24px) scale(0.95);
+}
+
+.toast-move {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* transisi daftar (kartu venue, booking list) */
+.fade-list-enter-active {
+  transition: all 0.25s ease-out;
+}
+
+.fade-list-leave-active {
+  transition: all 0.2s ease-in;
+}
+
+.fade-list-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.fade-list-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.fade-list-move {
+  transition: transform 0.25s ease;
+}
+
+/* animasi fade umum */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

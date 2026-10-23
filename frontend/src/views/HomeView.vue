@@ -89,11 +89,15 @@ function pilihOlahraga(kode) {
 
       <div class="judul-daftar">
         <h2>Venue</h2>
-        <span v-if="venues && !loading" class="muted small">{{ venues.length }} venue ditemukan</span>
+        <span v-if="loading" class="muted small">
+          <span class="spinner" aria-hidden="true" style="display:inline-block; vertical-align:middle; width:13px; height:13px; margin-right:4px;" />
+          Memperbarui...
+        </span>
+        <span v-else-if="venues" class="muted small">{{ venues.length }} venue ditemukan</span>
       </div>
 
       <RequestState
-        :loading="loading"
+        :loading="loading && !venues"
         :error="error"
         :kosong="kosong"
         :tinggi="300"
@@ -102,9 +106,9 @@ function pilihOlahraga(kode) {
         pesan-kosong="Coba kata kunci lain atau pilih semua olahraga."
         @ulang="muat"
       >
-        <div class="venues">
+        <TransitionGroup name="fade-list" tag="div" class="venues">
           <VenueCard v-for="v in venues" :key="v.id" :venue="v" />
-        </div>
+        </TransitionGroup>
       </RequestState>
 
       <section class="langkah" aria-labelledby="judul-langkah">

@@ -67,12 +67,17 @@ onMounted(() => {
 
     <section class="konten">
       <!-- pengaturan venue & kelola pengguna tetap bisa dibuka walau belum punya venue -->
-      <RouterView
-        v-if="manager.venue || route.name === 'manager-venue' || route.name === 'manager-users'"
-        :key="route.name === 'manager-users' ? 'users' : (manager.venue?.id ?? 0)"
-      />
+      <RouterView v-slot="{ Component }">
+        <Transition name="fade-subtle" mode="out-in">
+          <component
+            :is="Component"
+            v-if="manager.venue || route.name === 'manager-venue' || route.name === 'manager-users'"
+            :key="route.name === 'manager-users' ? 'users' : `${manager.venue?.id ?? 0}-${route.path}`"
+          />
+        </Transition>
+      </RouterView>
       <RequestState
-        v-else
+        v-if="!manager.venue && route.name !== 'manager-venue' && route.name !== 'manager-users'"
         :loading="manager.loading || (!manager.error && !manager.venues.length && !manager.sudahDimuat)"
         :error="manager.error"
         :kosong="manager.sudahDimuat && !manager.venues.length"

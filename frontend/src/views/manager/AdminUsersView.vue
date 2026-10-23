@@ -27,6 +27,7 @@ const KOSONG = {
 const form = reactive({ ...KOSONG })
 const modal = ref(false)
 const menyimpan = ref(false)
+const togglingId = ref(null)
 const pesanError = ref('')
 
 async function muat() {
@@ -89,16 +90,19 @@ async function simpan() {
 
 async function toggleAktif(u) {
   if (u.id === auth.user?.id) {
-    toast.error('Tidak dapat menonaktifkan akun sendiri')
+    toast.gagal('Tidak dapat menonaktifkan akun sendiri')
     return
   }
+  togglingId.value = u.id
   const statusBaru = !u.is_active
   try {
     await adminApi.ubahUser(u.id, { is_active: statusBaru })
     u.is_active = statusBaru
     toast.sukses(`Status ${u.nama} berhasil diubah jadi ${statusBaru ? 'Aktif' : 'Nonaktif'}`)
   } catch (e) {
-    toast.error(e.message)
+    toast.gagal(e.message)
+  } finally {
+    togglingId.value = null
   }
 }
 
@@ -230,10 +234,11 @@ function roleBadgeClass(role) {
               <td>
                 <button
                   class="btn btn-ghost btn-sm"
-                  :disabled="u.id === auth.user?.id"
+                  :disabled="u.id === auth.user?.id || togglingId === u.id"
                   @click="toggleAktif(u)"
                 >
-                  {{ u.is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                  <span v-if="togglingId === u.id" class="spinner" aria-hidden="true" />
+                  {{ togglingId === u.id ? 'Mengubah...' : (u.is_active ? 'Nonaktifkan' : 'Aktifkan') }}
                 </button>
               </td>
             </tr>
@@ -302,11 +307,11 @@ function roleBadgeClass(role) {
         </label>
       </form>
 
-      <template #footer>
-        <button type="button" class="btn btn-ghost" @click="modal = false">Batal</button>
+      <template #aksi>
+        <button type="button" class="btn btn-ghost" :disabled="menyimpan" @click="modal = false">Batal</button>
         <button form="form-user" class="btn btn-primary" :disabled="menyimpan">
           <span v-if="menyimpan" class="spinner" aria-hidden="true" />
-          Simpan Akun
+          {{ menyimpan ? 'Menyimpan...' : 'Simpan Akun' }}
         </button>
       </template>
     </ModalDialog>

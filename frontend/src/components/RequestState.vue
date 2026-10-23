@@ -14,29 +14,37 @@ defineEmits(['ulang'])
 </script>
 
 <template>
-  <div v-if="loading" class="memuat" aria-busy="true" aria-label="Memuat data">
-    <div v-for="i in baris" :key="i" class="skeleton" :style="{ height: `${tinggi / baris}px` }" />
-  </div>
-  <div v-else-if="error" class="kotak error" role="alert">
-    <span class="ikon"><AppIcon name="alert" :size="22" /></span>
-    <div>
-      <p class="judul">Data gagal dimuat</p>
-      <p class="muted">{{ error.message }}</p>
+  <Transition name="state-fade" mode="out-in">
+    <div v-if="loading" key="loading" class="memuat" aria-busy="true" aria-label="Memuat data">
+      <div v-for="i in baris" :key="i" class="skeleton" :style="{ height: `${tinggi / baris}px` }" />
     </div>
-    <button class="btn btn-outline btn-sm" @click="$emit('ulang')">Coba lagi</button>
-  </div>
-  <div v-else-if="kosong" class="kotak kosong">
-    <span class="ikon"><AppIcon name="court" :size="22" /></span>
-    <div>
-      <p class="judul">{{ judulKosong }}</p>
-      <p v-if="pesanKosong" class="muted">{{ pesanKosong }}</p>
+    <div v-else-if="error" key="error" class="kotak error" role="alert">
+      <span class="ikon"><AppIcon name="alert" :size="22" /></span>
+      <div>
+        <p class="judul">Data gagal dimuat</p>
+        <p class="muted">{{ error.message }}</p>
+      </div>
+      <button class="btn btn-outline btn-sm" @click="$emit('ulang')">Coba lagi</button>
     </div>
-    <slot name="aksi-kosong" />
-  </div>
-  <slot v-else />
+    <div v-else-if="kosong" key="kosong" class="kotak kosong">
+      <span class="ikon"><AppIcon name="court" :size="22" /></span>
+      <div>
+        <p class="judul">{{ judulKosong }}</p>
+        <p v-if="pesanKosong" class="muted">{{ pesanKosong }}</p>
+      </div>
+      <slot name="aksi-kosong" />
+    </div>
+    <div v-else key="konten" class="state-konten">
+      <slot />
+    </div>
+  </Transition>
 </template>
 
 <style scoped>
+.state-konten {
+  width: 100%;
+}
+
 .memuat {
   display: flex;
   flex-direction: column;

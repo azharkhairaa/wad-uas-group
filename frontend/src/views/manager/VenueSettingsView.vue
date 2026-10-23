@@ -45,6 +45,7 @@ const pesanError = ref('')
 const baru = reactive(dariVenue(null))
 const modalBaru = ref(!manager.venue)
 const errorBaru = ref('')
+const menyimpanBaru = ref(false)
 
 async function simpan() {
   menyimpan.value = true
@@ -72,6 +73,7 @@ async function gantiAktif() {
 
 async function tambahVenue() {
   errorBaru.value = ''
+  menyimpanBaru.value = true
   try {
     const hasil = await managerApi.tambahVenue(keData(baru))
     manager.perbarui(hasil)
@@ -81,6 +83,8 @@ async function tambahVenue() {
     toast.sukses(`${hasil.nama} ditambahkan. Lanjutkan dengan menambah lapang.`)
   } catch (e) {
     errorBaru.value = e.message
+  } finally {
+    menyimpanBaru.value = false
   }
 }
 </script>
@@ -155,7 +159,10 @@ async function tambahVenue() {
         <button type="button" class="btn btn-ghost" @click="gantiAktif">
           {{ manager.venue.is_active ? 'Sembunyikan venue dari pencarian' : 'Tampilkan venue lagi' }}
         </button>
-        <button class="btn btn-primary" :disabled="menyimpan">Simpan pengaturan</button>
+        <button class="btn btn-primary" :disabled="menyimpan">
+          <span v-if="menyimpan" class="spinner" aria-hidden="true" />
+          {{ menyimpan ? 'Menyimpan...' : 'Simpan pengaturan' }}
+        </button>
       </div>
     </form>
 
@@ -191,8 +198,11 @@ async function tambahVenue() {
         <p class="muted small full">Jam operasional awal 08:00–22:00 setiap hari, bisa diubah setelah venue dibuat.</p>
       </form>
       <template #aksi>
-        <button class="btn btn-ghost" @click="modalBaru = false">Batal</button>
-        <button class="btn btn-primary" type="submit" form="form-venue-baru">Tambah venue</button>
+        <button class="btn btn-ghost" :disabled="menyimpanBaru" @click="modalBaru = false">Batal</button>
+        <button class="btn btn-primary" type="submit" form="form-venue-baru" :disabled="menyimpanBaru">
+          <span v-if="menyimpanBaru" class="spinner" aria-hidden="true" />
+          {{ menyimpanBaru ? 'Menyimpan...' : 'Tambah venue' }}
+        </button>
       </template>
     </ModalDialog>
   </div>

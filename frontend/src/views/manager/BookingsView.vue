@@ -290,7 +290,8 @@ if (route.query.q) buka(route.query.q)
           Catat Pelunasan
         </button>
         <button v-if="bisa.selesai" class="btn btn-primary" :disabled="memproses" @click="jalankanAksi('selesai')">
-          Tandai selesai
+          <span v-if="memproses" class="spinner" aria-hidden="true" />
+          {{ memproses ? 'Memproses...' : 'Tandai selesai' }}
         </button>
         <button
           v-else-if="bisa.lewatBelumLunas"
@@ -300,7 +301,10 @@ if (route.query.q) buka(route.query.q)
         >
           Tandai selesai (Terkunci)
         </button>
-        <button v-if="bisa.setujui" class="btn btn-primary" :disabled="memproses" @click="jalankanAksi('setujui')">Setujui</button>
+        <button v-if="bisa.setujui" class="btn btn-primary" :disabled="memproses" @click="jalankanAksi('setujui')">
+          <span v-if="memproses" class="spinner" aria-hidden="true" />
+          {{ memproses ? 'Menyetujui...' : 'Setujui' }}
+        </button>
       </template>
     </ModalDialog>
 
@@ -317,9 +321,10 @@ if (route.query.q) buka(route.query.q)
         </label>
       </div>
       <template #aksi>
-        <button class="btn btn-ghost" @click="modalAlasan = null">Kembali</button>
+        <button class="btn btn-ghost" :disabled="memproses" @click="modalAlasan = null">Kembali</button>
         <button class="btn btn-danger" :disabled="memproses || alasan.trim().length < 5" @click="jalankanAksi(modalAlasan)">
-          {{ modalAlasan === 'tolak' ? 'Tolak booking' : 'Batalkan booking' }}
+          <span v-if="memproses" class="spinner" aria-hidden="true" />
+          {{ memproses ? 'Memproses...' : (modalAlasan === 'tolak' ? 'Tolak booking' : 'Batalkan booking') }}
         </button>
       </template>
     </ModalDialog>
@@ -345,7 +350,8 @@ if (route.query.q) buka(route.query.q)
       <template #aksi>
         <button class="btn btn-ghost" :disabled="memproses" @click="modalBayar = false">Batal</button>
         <button class="btn btn-primary" :disabled="memproses" @click="konfirmasiPelunasan">
-          Simpan Pelunasan
+          <span v-if="memproses" class="spinner" aria-hidden="true" />
+          {{ memproses ? 'Menyimpan...' : 'Simpan Pelunasan' }}
         </button>
       </template>
     </ModalDialog>
