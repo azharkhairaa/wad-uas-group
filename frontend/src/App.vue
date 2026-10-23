@@ -3,6 +3,7 @@ import { RouterView } from 'vue-router'
 
 import AppFooter from '@/components/AppFooter.vue'
 import AppHeader from '@/components/AppHeader.vue'
+import BottomNav from '@/components/BottomNav.vue'
 import LoadingBar from '@/components/LoadingBar.vue'
 import ToastHost from '@/components/ToastHost.vue'
 import { useTheme } from '@/composables/useTheme'
@@ -23,6 +24,7 @@ useTheme()
       </RouterView>
     </main>
     <AppFooter />
+    <BottomNav />
     <ToastHost />
   </div>
 </template>
@@ -52,5 +54,11 @@ useTheme()
 
 .skip:focus {
   top: 12px;
+}
+
+@media (max-width: 820px) {
+  .app-main {
+    padding-bottom: 68px;
+  }
 }
 </style>

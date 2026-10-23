@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { venueApi } from '@/api'
@@ -15,6 +15,20 @@ const router = useRouter()
 const q = ref(route.query.q || '')
 const olahraga = ref(route.query.olahraga || '')
 const { data: venues, loading, error, kosong, jalankan } = useRequest(venueApi.daftar)
+const cariInput = ref(null)
+
+watch(
+  () => route.query.focus,
+  (val) => {
+    if (val === 'search') {
+      nextTick(() => {
+        cariInput.value?.focus()
+        cariInput.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      })
+    }
+  },
+  { immediate: true },
+)
 
 function muat() {
   jalankan({ q: q.value.trim(), olahraga: olahraga.value })
@@ -63,6 +77,7 @@ function pilihOlahraga(kode) {
           <span class="sr-only">Cari venue</span>
           <span class="cari-ikon"><AppIcon name="search" :size="20" /></span>
           <input
+            ref="cariInput"
             v-model="q"
             class="input"
             type="search"

@@ -776,15 +776,15 @@ onBeforeUnmount(() => clearInterval(timer))
   }
 
   .ada-bar {
-    padding-bottom: 110px;
+    padding-bottom: 160px;
   }
 
   .bar-hp {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
-    z-index: 30;
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    z-index: 52;
     display: flex;
     align-items: center;
     justify-content: space-between;

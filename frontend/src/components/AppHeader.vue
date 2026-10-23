@@ -15,15 +15,6 @@ const toast = useToastStore()
 const router = useRouter()
 const route = useRoute()
 const { tema, gantiTema } = useTheme()
-const menuBuka = ref(false)
-
-watch(
-  () => route.fullPath,
-  () => {
-    menuBuka.value = false
-  },
-)
-
 const keluarLoading = ref(false)
 
 async function keluar() {
@@ -46,17 +37,20 @@ async function keluar() {
         <BrandLogo />
       </RouterLink>
 
-      <button
-        class="btn btn-ghost menu-btn"
-        :aria-expanded="menuBuka"
-        aria-controls="menu-utama"
-        @click="menuBuka = !menuBuka"
-      >
-        <AppIcon name="menu" :size="22" />
-        <span class="sr-only">Menu</span>
-      </button>
+      <div class="mobile-actions">
+        <button
+          class="btn btn-ghost btn-sm tema"
+          :aria-label="tema === 'dark' ? 'Pakai tema terang' : 'Pakai tema gelap'"
+          @click="gantiTema"
+        >
+          <AppIcon :name="tema === 'dark' ? 'sun' : 'moon'" :size="18" />
+        </button>
+        <span v-if="auth.sudahLogin" class="avatar avatar-hp" aria-hidden="true">
+          {{ auth.user.nama.charAt(0) }}
+        </span>
+      </div>
 
-      <nav id="menu-utama" class="nav" :class="{ buka: menuBuka }" aria-label="Menu utama">
+      <nav id="menu-utama" class="nav" aria-label="Menu utama">
         <RouterLink to="/" class="nav-link" exact-active-class="aktif">Cari lapang</RouterLink>
         <RouterLink v-if="auth.isCustomer" to="/bookings" class="nav-link" active-class="aktif">
           Booking saya
@@ -186,44 +180,26 @@ async function keluar() {
   color: var(--muted);
 }
 
-.menu-btn {
+.mobile-actions {
   display: none;
-  margin-left: auto;
-  font-size: 1.2rem;
 }
 
 @media (max-width: 820px) {
-  .menu-btn {
-    display: inline-flex;
+  .mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .avatar-hp {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
   }
 
   .nav {
-    display: none;
-    position: absolute;
-    top: 64px;
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    align-items: stretch;
-    padding: 12px 16px 16px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    box-shadow: var(--shadow);
-  }
-
-  .nav.buka {
-    display: flex;
-  }
-
-  .nav-akhir {
-    flex-wrap: wrap;
-    margin: 8px 0 0;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-  }
-
-  .user {
-    flex: 1;
+    display: none !important;
   }
 }
 </style>
