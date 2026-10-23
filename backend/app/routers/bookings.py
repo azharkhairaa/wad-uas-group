@@ -46,7 +46,7 @@ def riwayat_booking(
         select(Booking)
         .options(*layanan.opsi_muat_booking())
         .where(Booking.customer_id == customer.id)
-        .order_by(Booking.tanggal.desc(), Booking.jam_mulai.desc())
+        .order_by(Booking.created_at.desc(), Booking.id.desc())
         .limit(200)
     )
     if status:
