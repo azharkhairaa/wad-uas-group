@@ -82,7 +82,7 @@ function pilihOlahraga(kode) {
             class="input"
             type="search"
             maxlength="60"
-            placeholder="Cari nama venue atau daerah, mis. Dago"
+            placeholder="Cari nama venue, olahraga, atau daerah, mis. Futsal, Dago"
           />
         </label>
       </div>

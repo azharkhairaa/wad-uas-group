@@ -1,7 +1,7 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import or_, select
+from sqlalchemy import String, cast, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app import waktu
@@ -66,7 +66,10 @@ def ambil_venue_publik(db: Session, slug: str) -> Venue:
     "",
     response_model=list[VenueRingkas],
     summary="Daftar venue",
-    description="Bisa disaring dengan kata kunci (nama atau alamat), kota dan jenis olahraga.",
+    description=(
+        "Bisa disaring dengan kata kunci (nama venue, alamat, kota, deskripsi, "
+        "fasilitas, jenis olahraga, atau nama lapang), kota, dan jenis olahraga."
+    ),
 )
 def daftar_venue(
     q: str | None = Query(default=None, max_length=60),
@@ -82,7 +85,19 @@ def daftar_venue(
     )
     if q:
         pola = f"%{q.strip()}%"
-        stmt = stmt.where(or_(Venue.nama.ilike(pola), Venue.alamat.ilike(pola)))
+        stmt = stmt.where(
+            or_(
+                Venue.nama.ilike(pola),
+                Venue.alamat.ilike(pola),
+                Venue.kota.ilike(pola),
+                Venue.deskripsi.ilike(pola),
+                Venue.fasilitas.ilike(pola),
+                Venue.courts.any(
+                    Court.is_active.is_(True)
+                    & (cast(Court.olahraga, String).ilike(pola) | Court.nama.ilike(pola))
+                ),
+            )
+        )
     if kota:
         stmt = stmt.where(Venue.kota.ilike(kota.strip()))
     if olahraga:
